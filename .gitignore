@@ -7,6 +7,7 @@
 log/
 node_modules/
 bower_components/
+local/
 
 ## Files
 result.xml

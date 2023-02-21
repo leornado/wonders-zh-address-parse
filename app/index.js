@@ -8,11 +8,10 @@ import AddressParse from './lib/address-parse'
 import $ from 'jquery'
 
 const parse = () => {
-    let type = 0
+    let type = 1, detectAlias = true;
     const onTextAreaBlur = (e) => {
         const address = e.target.value
-        const parseResult = AddressParse(address, { type, textFilter: ['电話', '電話', '聯系人'] })
-        console.log(parseResult)
+        const parseResult = AddressParse(address, { type, textFilter: ['电話', '電話', '聯系人'], detectAlias })
         $('#result').empty();
         $('#result').append(`<ul>${Object.entries(parseResult).map(([k, v]) => `<li>${k}：${v}</li>`).join('')}</ul>`)
     }

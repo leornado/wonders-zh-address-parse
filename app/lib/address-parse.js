@@ -55,7 +55,8 @@ log(provinces.length + cities.length + areas.length)
  * @constructor
  */
 const AddressParse = (address, options) => {
-    const { type = 0, extraGovData = {}, textFilter = [], nameMaxLength = 4 } = typeof options === 'object' ? options : (typeof options === 'number' ? { type: options } : {})
+    const { type = 0, extraGovData = {}, textFilter = [], nameMaxLength = 4, detectAlias = false } =
+        typeof options === 'object' ? options : (typeof options === 'number' ? { type: options } : {})
 
     if (!address) {
         return {}
@@ -99,8 +100,8 @@ const AddressParse = (address, options) => {
         if (!parseResult.province[0] || !parseResult.city[0] || !parseResult.area[0]) {
             // 两个方法都可以解析，正则和树查找
             let parse = {}
-            type === 1 && (parse = parseRegion(item, parseResult))
-            type === 0 && (parse = parseRegionWithRegexp(item, parseResult))
+            type === 1 && (parse = parseRegion(item, parseResult, detectAlias))
+            type === 0 && (parse = parseRegionWithRegexp(item, parseResult, detectAlias))
             const {province, city, area, detail} = parse
             parseResult.province = province || []
             parseResult.area = area || []
@@ -118,8 +119,8 @@ const AddressParse = (address, options) => {
     log('解析耗时--->', d2 - d1)
 
     const province = parseResult.province[0]
-    const city = parseResult.city[0]
-    const area = parseResult.area[0]
+    const city = parseResult.city[0], isMatchCityAlias = parseResult.city.matchAlias;
+    const area = parseResult.area[0], isMatchAreaAlias = parseResult.area.matchAlias
     let detail = parseResult.detail
 
     detail = detail.map(item => item.replace(new RegExp(`${province && province.name}|${city && city.name}|${area && area.name}`, 'g'), ''))
@@ -154,10 +155,13 @@ const AddressParse = (address, options) => {
     if (~['市辖区', '区', '县', '镇'].indexOf(cityName)) {
         cityName = provinceName
     }
+
     return Object.assign(parseResult, {
         province: provinceName || '',
         city: cityName || '',
-        area: (area && area.name) || '',
+        cityAlias: isMatchCityAlias && city && city.alias || '',
+        area: area && area.name || '',
+        areaAlias: isMatchAreaAlias && area && area.alias || '',
         detail: (detail && detail.length > 0 && detail.join('')) || ''
     })
 }
@@ -210,7 +214,7 @@ const sortAddress = (splitAddress) => {
  * @param hasParseResult
  * @returns {{area: (Array|*|string), province: (Array|*|string), city: (Array|*|string|string), detail: (*|Array)}}
  */
-const parseRegionWithRegexp = (fragment, hasParseResult) => {
+const parseRegionWithRegexp = (fragment, hasParseResult, detectAlias) => {
     log('----- 当前使用正则匹配模式 -----')
     let province = hasParseResult.province || [], city = hasParseResult.city || [], area = hasParseResult.area || [],
         detail = []
@@ -244,6 +248,7 @@ const parseRegionWithRegexp = (fragment, hasParseResult) => {
             const str = fragment.substring(0, i + 1)
             const regexCity = new RegExp(`\{\"code\":\"[0-9]{1,6}\",\"name\":\"${str}[\u4E00-\u9FA5]*?\",\"provinceCode\":\"${province[0] ? `${province[0].code}` : '[0-9]{1,6}'}\"\}`, 'g')
             const matchCity = cityString.match(regexCity)
+
             if (matchCity) {
                 const cityObj = JSON.parse(matchCity[0])
                 if (matchCity.length === 1) {
@@ -252,7 +257,21 @@ const parseRegionWithRegexp = (fragment, hasParseResult) => {
                     city.push(cityObj)
                 }
             } else {
-                break
+                if (!detectAlias) break;
+
+                const regexCityAlias = new RegExp(`\{\"alias\":\"${str}[\u4E00-\u9FA5]*?\",\"code\":\"[0-9]{1,6}\",\"name\":\"[\u4E00-\u9FA5]*?\",\"provinceCode\":\"${province[0] ? `${province[0].code}` : '[0-9]{1,6}'}\"\}`, 'g')
+                const matchCityAlias = cityString.match(regexCityAlias);
+                if (matchCityAlias) {
+                    const cityObj = JSON.parse(matchCityAlias[0])
+                    if (matchCityAlias.length === 1) {
+                        city = []
+                        matchStr = str
+                        city.push(cityObj)
+                        city.matchAlias = true;
+                    }
+                } else {
+                    break
+                }
             }
         }
         if (city[0]) {
@@ -280,7 +299,21 @@ const parseRegionWithRegexp = (fragment, hasParseResult) => {
                     area.push(areaObj)
                 }
             } else {
-                break
+                if (!detectAlias) break;
+
+                const regexAreaAlias = new RegExp(`\{\"alias\":\"${str}[\u4E00-\u9FA5]*?\",\"code\":\"[0-9]{1,9}\",\"name\":\"[\u4E00-\u9FA5]*?\",\"cityCode\":\"${city[0] ? city[0].code : '[0-9]{1,6}'}\",\"provinceCode\":\"${province[0] ? `${province[0].code}` : '[0-9]{1,6}'}\"\}`, 'g')
+                const matchAreaAlias = areaString.match(regexAreaAlias);
+                if (matchAreaAlias) {
+                    const areaObj = JSON.parse(matchAreaAlias[0])
+                    if (matchAreaAlias.length === 1) {
+                        area = []
+                        matchStr = str
+                        area.push(areaObj)
+                        area.matchAlias = true
+                    }
+                } else {
+                    break
+                }
             }
         }
         if (area[0]) {
@@ -292,7 +325,7 @@ const parseRegionWithRegexp = (fragment, hasParseResult) => {
                 province.push(JSON.parse(matchProvince[0]))
             }
             if (city.length === 0) {
-                const regexCity = new RegExp(`\{\"code\":\"${cityCode}\",\"name\":\"[\u4E00-\u9FA5]+?\",\"provinceCode\":\"${provinceCode}\"\}`, 'g')
+                const regexCity = new RegExp(`\{(\"alias\":\\[[^\\[\\]]*\\],)?\"code\":\"${cityCode}\",\"name\":\"[\u4E00-\u9FA5]+?\",\"provinceCode\":\"${provinceCode}\"\}`, 'g')
                 const matchCity = cityString.match(regexCity)
                 city.push(JSON.parse(matchCity[0]))
             }
@@ -319,7 +352,7 @@ const parseRegionWithRegexp = (fragment, hasParseResult) => {
  * @param hasParseResult
  * @returns {{area: Array, province: Array, city: Array, detail: Array}}
  */
-const parseRegion = (fragment, hasParseResult) => {
+const parseRegion = (fragment, hasParseResult, detectAlias) => {
     log('----- 当前使用树查找模式 -----')
     let province = [], city = [], area = [], detail = []
 
@@ -349,7 +382,7 @@ const parseRegion = (fragment, hasParseResult) => {
     } else {
         // 从市区开始查找
         for (const tempCity of cities) {
-            const {name, provinceCode} = tempCity
+            const {name, provinceCode, alias} = tempCity
             const currentProvince = province[0]
             // 有省
             if (currentProvince) {
@@ -366,6 +399,20 @@ const parseRegion = (fragment, hasParseResult) => {
                         city.push(tempCity)
                         fragment = fragment.replace(new RegExp(replaceName, 'g'), '')
                         break
+                    } else if (detectAlias && alias) {
+                        for (let i = alias.length; i > 1; i--) {
+                            const temp = alias.substring(0, i)
+                            if (fragment.indexOf(temp) === 0) {
+                                replaceName = temp
+                                break
+                            }
+                        }
+                        if (replaceName) {
+                            city.push(tempCity)
+                            fragment = fragment.replace(new RegExp(replaceName, 'g'), '')
+                            city.matchAlias = true;
+                            break
+                        }
                     }
                 }
             } else {
@@ -388,7 +435,7 @@ const parseRegion = (fragment, hasParseResult) => {
 
     // 从区市县开始查找
     for (const tempArea of areas) {
-        const {name, provinceCode, cityCode} = tempArea
+        const {name, provinceCode, cityCode, alias} = tempArea
         const currentProvince = province[0]
         const currentCity = city[0]
 
@@ -410,6 +457,22 @@ const parseRegion = (fragment, hasParseResult) => {
                     !currentProvince && province.push(provinces.find(item => item.code === provinceCode))
                     fragment = fragment.replace(replaceName, '')
                     break
+                } else if (detectAlias && alias) {
+                    for (let i = alias.length; i > 1; i--) {
+                        const temp = alias.substring(0, i)
+                        if (fragment.indexOf(temp) === 0) {
+                            replaceName = temp
+                            break
+                        }
+                    }
+                    if (replaceName) {
+                        area.push(tempArea)
+                        !currentCity && city.push(cities.find(item => item.code === cityCode))
+                        !currentProvince && province.push(provinces.find(item => item.code === provinceCode))
+                        fragment = fragment.replace(replaceName, '')
+                        area.matchAlias = true;
+                        break
+                    }
                 }
             }
         } else {
