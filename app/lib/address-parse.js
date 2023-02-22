@@ -6,46 +6,54 @@ const log = (...infos) => {
         console.log(...infos)
     }
 }
-const filterCity = ['行政区划']
-addressJson.forEach(item => {
-    if (item.children) {
-        item.children.forEach((city, cityIndex) => {
-            const index = ~filterCity.findIndex(filter => ~city.name.indexOf(filter))
-            if (index) {
-                item.children = item.children.concat(city.children || [])
-                item.children.splice(cityIndex, 1)
-            }
-        })
-    }
-})
-log('完整的数据：', addressJson);
-const provinces = addressJson.reduce((per, cur) => {
-    const {children, ...others} = cur
-    return per.concat(others)
-}, [])
 
-const cities = addressJson.reduce((per, cur) => {
-    return per.concat(cur.children ? cur.children.map(({children, ...others}) => ({...others, provinceCode: cur.code})) : [])
-}, [])
+let provinces, cities, areas;
+let provinceString, cityString, areaString;
 
-const areas = addressJson.reduce((per, cur) => {
-    const provinceCode = cur.code
-    return per.concat(cur.children ? cur.children.reduce((p, c) => {
-        const cityCode = c.code
-        return p.concat(c.children ? c.children.map(({children, ...others}) => ({...others, cityCode, provinceCode,})) : [])
-    }, []) : [])
-}, [])
+function initAddressJson (addressJson) {
+    const filterCity = ['行政区划']
+    addressJson.forEach(item => {
+        if (item.children) {
+            item.children.forEach((city, cityIndex) => {
+                const index = ~filterCity.findIndex(filter => ~city.name.indexOf(filter))
+                if (index) {
+                    item.children = item.children.concat(city.children || [])
+                    item.children.splice(cityIndex, 1)
+                }
+            })
+        }
+    })
+    log('完整的数据：', addressJson);
+    provinces = addressJson.reduce((per, cur) => {
+        const {children, ...others} = cur
+        return per.concat(others)
+    }, [])
+
+    cities = addressJson.reduce((per, cur) => {
+        return per.concat(cur.children ? cur.children.map(({children, ...others}) => ({...others, provinceCode: cur.code})) : [])
+    }, [])
+
+    areas = addressJson.reduce((per, cur) => {
+        const provinceCode = cur.code
+        return per.concat(cur.children ? cur.children.reduce((p, c) => {
+            const cityCode = c.code
+            return p.concat(c.children ? c.children.map(({children, ...others}) => ({...others, cityCode, provinceCode,})) : [])
+        }, []) : [])
+    }, [])
 
 
-let provinceString = JSON.stringify(provinces)
-let cityString = JSON.stringify(cities)
-let areaString = JSON.stringify(areas)
+    provinceString = JSON.stringify(provinces)
+    cityString = JSON.stringify(cities)
+    areaString = JSON.stringify(areas)
 
-log(provinces)
-log(cities)
-log(areas)
+    log(provinces)
+    log(cities)
+    log(areas)
 
-log(provinces.length + cities.length + areas.length)
+    log(provinces.length + cities.length + areas.length)
+}
+
+initAddressJson(addressJson);
 
 /**
  * 需要解析的地址，type是解析的方式，默认是正则匹配
@@ -119,8 +127,8 @@ const AddressParse = (address, options) => {
     log('解析耗时--->', d2 - d1)
 
     const province = parseResult.province[0]
-    const city = parseResult.city[0], isMatchCityAlias = parseResult.city.matchAlias;
-    const area = parseResult.area[0], isMatchAreaAlias = parseResult.area.matchAlias
+    const city = parseResult.city[0], isMatchCityAlias = !!parseResult.city.matchAlias;
+    const area = parseResult.area[0], isMatchAreaAlias = !!parseResult.area.matchAlias
     let detail = parseResult.detail
 
     detail = detail.map(item => item.replace(new RegExp(`${province && province.name}|${city && city.name}|${area && area.name}`, 'g'), ''))
@@ -156,14 +164,24 @@ const AddressParse = (address, options) => {
         cityName = provinceName
     }
 
-    return Object.assign(parseResult, {
+    const result = Object.assign(parseResult, {
         province: provinceName || '',
         city: cityName || '',
-        cityAlias: isMatchCityAlias && city && city.alias || '',
         area: area && area.name || '',
-        areaAlias: isMatchAreaAlias && area && area.alias || '',
         detail: (detail && detail.length > 0 && detail.join('')) || ''
-    })
+    });
+
+    if (city && city.alias) {
+        result.cityAlias = city.alias;
+        result.isMatchCityAlias = isMatchCityAlias;
+    }
+
+    if (area && area.alias) {
+        result.areaAlias = area.alias;
+        result.isMatchAreaAlias = isMatchAreaAlias;
+    }
+
+    return result;
 }
 
 /**
@@ -325,7 +343,7 @@ const parseRegionWithRegexp = (fragment, hasParseResult, detectAlias) => {
                 province.push(JSON.parse(matchProvince[0]))
             }
             if (city.length === 0) {
-                const regexCity = new RegExp(`\{(\"alias\":\\[[^\\[\\]]*\\],)?\"code\":\"${cityCode}\",\"name\":\"[\u4E00-\u9FA5]+?\",\"provinceCode\":\"${provinceCode}\"\}`, 'g')
+                const regexCity = new RegExp(`\{(\"alias\":\"[\u4E00-\u9FA5]*?\",)?\"code\":\"${cityCode}\",\"name\":\"[\u4E00-\u9FA5]+?\",\"provinceCode\":\"${provinceCode}\"\}`, 'g')
                 const matchCity = cityString.match(regexCity)
                 city.push(JSON.parse(matchCity[0]))
             }
@@ -620,4 +638,7 @@ const cleanAddress = (address, textFilter = []) => {
     return address
 }
 
-export default AddressParse
+export default {
+    AddressParse,
+    initAddressJson
+}
