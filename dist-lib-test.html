@@ -199,43 +199,42 @@
     </div>
 <!-- Place this tag in your head or just before your close body tag. -->
 <script async defer src="https://buttons.github.io/buttons.js"></script>
-<link rel="stylesheet" href="../assets/styles/index.css">
+<link rel="stylesheet" href="./index.css">
 <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
-<script type="module">
-    fetch('../test/convert/area-convert.json').then(async res => {
+<script>
+    document.addEventListener('readystatechange', () => {
         let type = 1, detectAlias = true;
 
-        const addressJson = await res.json();
+        const addressJson = {};
         console.log(addressJson);
         window.ZhAddressParse.initAddressJson(addressJson);
 
-        document.addEventListener('readystatechange', () => {
-            const parse = () => {
-                const onTextAreaBlur = (e) => {
-                    const address = e.target.value
-                    const parseResult = window.ZhAddressParse.AddressParse(address, { type, detectAlias, textFilter: ['电話', '電話', '聯系人'] })
-                    // The parseResult is an object contain { province: '', name: '', city: '', area: '', detail: '', phone: '', postalCode: '' }
-                    console.log(parseResult)
-                    $('#result').empty();
-                    const li = Object.entries(parseResult).map(([k, v]) => '<li>' + k + '：' + v + '</li>').join('');
-                    $('#result').append('<ul>' + li + '</ul>')
-                }
-                $('#addressContent').bind('input propertychange', onTextAreaBlur)
-
-                $('#addressList li').on('click', (e) => {
-                    $('#addressContent').val(e.target.innerText)
-                    $('#addressContent')[0].dispatchEvent(new Event('input'));
-                })
+        const parse = () => {
+            const onTextAreaBlur = (e) => {
+                const address = e.target.value
+                const parseResult = window.ZhAddressParse.AddressParse(address, { type, detectAlias, textFilter: ['电話', '電話', '聯系人'] })
+                // The parseResult is an object contain { province: '', name: '', city: '', area: '', detail: '', phone: '', postalCode: '' }
+                console.log(parseResult)
+                $('#result').empty();
+                const li = Object.entries(parseResult).map(([k, v]) => '<li>' + k + '：' + v + '</li>').join('');
+                $('#result').append('<ul>' + li + '</ul>')
             }
+            $('#addressContent').bind('input propertychange', onTextAreaBlur)
 
-            $('#select').val(type)
-            $('#select').change((e) => { type = Number(e.target.value); });
+            $('#addressList li').on('click', (e) => {
+                console.log(e);
+                $('#addressContent').val(e.target.innerText)
+                $('#addressContent')[0].dispatchEvent(new Event('input'));
+            })
+        }
 
-            $('#select-alias').val(detectAlias + '')
-            $('#select-alias').change((e) => detectAlias = e.target.value === 'true');
+        $('#select').val(type)
+        $('#select').change((e) => { type = Number(e.target.value); });
 
-            parse()
-        });
+        $('#select-alias').val(detectAlias + '')
+        $('#select-alias').change((e) => detectAlias = e.target.value === 'true');
+
+        parse()
     });
 </script>
 </body>
