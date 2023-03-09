@@ -1,0 +1,5 @@
+{
+  "200801000001，张三，13688888888，济源市市辖区沁园街道花花花路888号": {"ignore": ["detail", "matchedAreaAlias"]},
+  "北京市市辖区东城区胜利街道宜宾南区2-2-401  李俊南 18210997754": {"ignore": ["area", "detail", "matchedCityAlias"]},
+  "湖北省神农架林区区辖区胜利街道宜宾南区2-2-401  李俊南 18210997754": {"ignore": ["area", "detail", "matchedAreaAlias"]}
+}

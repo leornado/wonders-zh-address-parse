@@ -1,5 +1,5 @@
 const fs = require('fs');
-const provinces = require('./area.json');
+const provinces = require('./area-alias.json');
 
 const convertProvinces = [];
 
@@ -50,6 +50,6 @@ provinces.forEach((province, i) => {
     }
 });
 
-fs.writeFileSync('./area-convert.json', JSON.stringify(convertProvinces), {encoding: 'utf8', flag: 'w'});
+fs.writeFileSync('./area-test-single-alias-olsp.json', JSON.stringify(convertProvinces), {encoding: 'utf8', flag: 'w'});
 
 console.log(`共含辖区：${xiaQuCount}`)

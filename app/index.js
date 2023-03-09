@@ -5,16 +5,27 @@
 // Load application styles
 import 'styles/index.css';
 import AddressParser from './lib/address-parse'
-import addressJson from '../test/convert/area-convert.json'
+import addressNoAliasJson from '../tools/convert/area-test-no-alias.json'
+import singleAliasJson from '../tools/convert/area-test-single-alias-olsp.json'
+import multipleAliasJson from '../tools/convert/area-test-multiple-alias.json'
 import $ from 'jquery'
 
-AddressParser.initAddressJson(addressJson);
-
 const parse = () => {
-    let type = 1, detectAlias = true;
+    let type = 1, // 0 正则，1 树
+        detectAlias = ''; // [single,multiple] 别名仅支持第二、三级，不支持第一级
+
+    const reInitAddressJson = (detectAlias4Init) => {
+        if (detectAlias4Init === 'multiple') AddressParser.initAddressJson(multipleAliasJson);
+        else if (detectAlias4Init === 'single') AddressParser.initAddressJson(singleAliasJson);
+        else AddressParser.initAddressJson(addressNoAliasJson);
+    }
+    reInitAddressJson(detectAlias);
+
     const onTextAreaBlur = (e) => {
         const address = e.target.value
-        const parseResult = AddressParser.AddressParse(address, {type, textFilter: ['电話', '電話', '聯系人'], detectAlias})
+        const parseResult = AddressParser.AddressParse(address, {
+            type, textFilter: ['电話', '電話', '聯系人'], detectAlias
+        })
         $('#result').empty();
         $('#result').append(`<ul>${Object.entries(parseResult).map(([k, v]) => `<li>${k}：${v}</li>`).join('')}</ul>`)
     }
@@ -26,10 +37,20 @@ const parse = () => {
     })
 
     $('#select').val(type)
-    $('#select').change((e) => { type = Number(e.target.value); });
+    $('#select').change((e) => {
+        type = Number(e.target.value);
+        onTextAreaBlur({target: {value: $('#addressContent').val()}});
+    });
 
-    $('#select-alias').val(detectAlias + '')
-    $('#select-alias').change((e) => detectAlias = e.target.value === 'true');
+    $('#select-alias').val(detectAlias)
+    $('#select-alias').change((e) => {
+        const detectAliasChanged = e.target.value !== detectAlias + '';
+        detectAlias = e.target.value;
+        if (!detectAliasChanged) return;
+
+        reInitAddressJson(detectAlias);
+        onTextAreaBlur({target: {value: $('#addressContent').val()}});
+    });
 }
 
 parse()

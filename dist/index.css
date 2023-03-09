@@ -46,10 +46,23 @@ html {
     background: rgba(229,194,181,.6);
 }
 
-.support-list ul li.olsp {
+.support-list ul li.olsp-alias {
     background: #b5d7e5;
 }
 
-.support-list ul li.olsp:hover {
+.support-list ul li.olsp-aliases {
+    background: #b7e5b5;
+}
+
+.support-list ul li.olsp-alias:hover {
     background: rgba(181, 205, 229, 0.6);
+}
+
+.support-list ul li.olsp-aliases:hover {
+    background: rgba(190, 229, 181, 0.6);
+}
+
+#addressList {
+    max-height: 25vh;
+    overflow: auto;
 }

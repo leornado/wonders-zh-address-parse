@@ -161,14 +161,26 @@
         <li>
             200801000001，张三，13688888888，济源市沁园街道花花花路888号
         </li>
-        <li class="olsp">
+        <li class="olsp-alias">
+            南宫雪 重庆市酉阳土家族苗族自治县龙潭镇龙潭一中新校门13311111111
+        </li>
+        <li class="olsp-alias">
+            200801000001，张三，13688888888，济源市市辖区沁园街道花花花路888号
+        </li>
+        <li class="olsp-alias">
             北京市市辖区东城区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
-        <li class="olsp">
+        <li class="olsp-aliases">
+            北京市北京辖区东城区胜利街道宜宾南区2-2-401  李俊南 18210997754
+        </li>
+        <li class="olsp-alias">
             湖北省神农架林区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
-        <li class="olsp">
+        <li class="olsp-alias">
             湖北省神农架林区区辖区胜利街道宜宾南区2-2-401  李俊南 18210997754
+        </li>
+        <li class="olsp-aliases">
+            湖北省神农架林区湖北省神农架林辖区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
     </ul>
 </div>
@@ -185,8 +197,9 @@
                 <td>
                     <h4>是否探测别名</h4>
                     <select class="select" id="select-alias">
-                        <option value="true">是</option>
-                        <option value="false">否</option>
+                        <option value="">不探测</option>
+                        <option value="single">单别名探测</option>
+                        <option value="multiple">多别名探测</option>
                     </select>
                 </td>
             </tr>
@@ -203,11 +216,22 @@
 <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 <script>
     document.addEventListener('readystatechange', () => {
-        let type = 1, detectAlias = true;
+        let type = 0, // 0 正则，1 树
+            detectAlias = 'single'; // [single,multiple] 别名仅支持第二、三级，不支持第一级
 
-        const addressJson = {};
-        console.log(addressJson);
-        window.ZhAddressParse.initAddressJson(addressJson);
+        const addressNoAliasJson = {};
+        const singleAliasJson = {};
+        const multipleAliasJson = {};
+        console.log(addressNoAliasJson);
+        console.log(singleAliasJson);
+        console.log(multipleAliasJson);
+
+        const reInitAddressJson = (detectAlias4Init) => {
+            if (detectAlias4Init === 'multiple') window.ZhAddressParse.initAddressJson(multipleAliasJson);
+            else if (detectAlias4Init === 'single') window.ZhAddressParse.initAddressJson(singleAliasJson);
+            else window.ZhAddressParse.initAddressJson(addressNoAliasJson);
+        }
+        reInitAddressJson(detectAlias);
 
         const parse = () => {
             const onTextAreaBlur = (e) => {
@@ -226,13 +250,23 @@
                 $('#addressContent').val(e.target.innerText)
                 $('#addressContent')[0].dispatchEvent(new Event('input'));
             })
+
+            $('#select').val(type)
+            $('#select').change((e) => {
+                type = Number(e.target.value);
+                onTextAreaBlur({target: {value: $('#addressContent').val()}});
+            });
+
+            $('#select-alias').val(detectAlias)
+            $('#select-alias').change((e) => {
+                const detectAliasChanged = e.target.value !== detectAlias;
+                detectAlias = e.target.value;
+                if (!detectAliasChanged) return;
+
+                reInitAddressJson(detectAlias);
+                onTextAreaBlur({target: {value: $('#addressContent').val()}});
+            });
         }
-
-        $('#select').val(type)
-        $('#select').change((e) => { type = Number(e.target.value); });
-
-        $('#select-alias').val(detectAlias + '')
-        $('#select-alias').change((e) => detectAlias = e.target.value === 'true');
 
         parse()
     });

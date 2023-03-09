@@ -1,0 +1,25 @@
+{
+  "group-1": [
+    "regex-multiple-vs-tree-multiple.json",
+    "regex-single-vs-tree-single.json",
+    "regex-vs-tree.json"
+  ],
+  "group-2": [
+    "regex-multiple-vs-tree-single.json",
+    "regex-single-vs-regex-multiple.json",
+    "regex-single-vs-tree-multiple.json",
+    "tree-single-vs-tree-multiple.json"
+  ],
+  "group-3": [
+    "regex-vs-regex-multiple-alias.json",
+    "regex-vs-tree-multiple.json",
+    "tree-vs-regex-multiple-alias.json",
+    "tree-vs-tree-multiple-alias.json",
+    "tree-vs-tree-single-alias.json"
+  ],
+  "group-4": [
+    "regex-vs-regex-single-alias.json",
+    "regex-vs-tree-single.json",
+    "tree-vs-regex-single-alias.json"
+  ]
+}

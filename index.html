@@ -161,14 +161,26 @@
         <li>
             200801000001，张三，13688888888，济源市沁园街道花花花路888号
         </li>
-        <li>
+        <li class="olsp-alias">
+            南宫雪 重庆市酉阳土家族苗族自治县龙潭镇龙潭一中新校门13311111111
+        </li>
+        <li class="olsp-alias">
+            200801000001，张三，13688888888，济源市市辖区沁园街道花花花路888号
+        </li>
+        <li class="olsp-alias">
             北京市市辖区东城区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
-        <li>
+        <li class="olsp-aliases">
+            北京市北京辖区东城区胜利街道宜宾南区2-2-401  李俊南 18210997754
+        </li>
+        <li class="olsp-alias">
             湖北省神农架林区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
-        <li>
+        <li class="olsp-alias">
             湖北省神农架林区区辖区胜利街道宜宾南区2-2-401  李俊南 18210997754
+        </li>
+        <li class="olsp-aliases">
+            湖北省神农架林区湖北省神农架林辖区胜利街道宜宾南区2-2-401  李俊南 18210997754
         </li>
     </ul>
 </div>
@@ -185,8 +197,9 @@
                 <td>
                     <h4>是否探测别名</h4>
                     <select class="select" id="select-alias">
-                        <option value="true">是</option>
-                        <option value="false">否</option>
+                        <option value="">不探测</option>
+                        <option value="single">单别名探测</option>
+                        <option value="multiple">多别名探测</option>
                     </select>
                 </td>
             </tr>
